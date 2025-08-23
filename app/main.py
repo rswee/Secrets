@@ -1,6 +1,5 @@
-#dummy to test
-
-import json, os, sys, pathlib
+# app/main.py
+import json, os, sys, pathlib, runpy
 
 # YAML optional: only needed if you use settings.yaml
 try:
@@ -20,29 +19,27 @@ def load_yaml(p: pathlib.Path):
     return yaml.safe_load(text) if text.strip() else {}
 
 def mask(s: str, keep_last=4) -> str:
-    if not s:
-        return ""
+    if not s: return ""
     return ("*" * max(0, len(s) - keep_last)) + s[-keep_last:]
 
 def assert_non_empty(val, msg):
-    if not val:
-        raise AssertionError(msg)
+    if not val: raise AssertionError(msg)
 
 def main() -> int:
     problems = []
 
-    # 1) Read config.json (structured injection)
+    # 1) config.json (structured injection)
     cfg_path = ROOT / "config.json"
     cfg = load_json(cfg_path)
     try:
         api_key = cfg.get("api", {}).get("key")
-        api_ep = cfg.get("api", {}).get("endpoint")
+        api_ep  = cfg.get("api", {}).get("endpoint")
         assert_non_empty(api_key, "config.json: api.key missing/empty")
-        assert_non_empty(api_ep, "config.json: api.endpoint missing/empty")
+        assert_non_empty(api_ep,  "config.json: api.endpoint missing/empty")
     except AssertionError as e:
         problems.append(str(e))
 
-    # 2) Read settings.yaml (structured injection)
+    # 2) settings.yaml (structured injection)
     settings_path = ROOT / "settings.yaml"
     if settings_path.exists():
         try:
@@ -53,37 +50,35 @@ def main() -> int:
             assert_non_empty(s_url, "settings.yaml: service.public_url missing/empty")
         except AssertionError as e:
             problems.append(str(e))
+        except SystemExit as e:
+            problems.append(str(e))
 
-    # 3) Token replacement file executed: import app.py value
-    # app/app.py should define API_TOKEN = "<injected>"
+    # 3) Token replacement in app/app.py (no package needed)
     try:
-        from app.app import API_TOKEN  # type: ignore
-        assert_non_empty(API_TOKEN, "app/app.py: API_TOKEN placeholder not replaced")
+        ns = runpy.run_path(str(ROOT / "app" / "app.py"))
+        api_token = ns.get("API_TOKEN", "")
+        assert_non_empty(api_token, "app/app.py: API_TOKEN placeholder not replaced")
     except Exception as e:
-        problems.append(f"app/app.py import failed or missing token: {e}")
+        problems.append(f"app/app.py load failed: {e}")
 
-    # 4) Also check runtime env (best practice)
+    # 4) ENV fall-back check
     env_token = os.getenv("API_TOKEN")
     if not env_token:
         problems.append("ENV: API_TOKEN not present (consider passing in job env)")
 
-    # Report
     if problems:
         print("Secret wiring check FAILED:")
-        for p in problems:
-            print(" -", p)
+        for p in problems: print(" -", p)
         return 1
 
-    # Masked summary
     print("Secret wiring OK")
     print("config.json → api.key:", mask(api_key))
     print("config.json → api.endpoint:", api_ep)
     if settings_path.exists():
         print("settings.yaml → service.api.key:", mask(s_key))
         print("settings.yaml → service.public_url:", s_url)
-    print("app/app.py → API_TOKEN:", mask(locals().get("API_TOKEN", "")))
+    print("app/app.py → API_TOKEN:", mask(api_token))
     print("ENV → API_TOKEN:", mask(env_token))
-
     return 0
 
 if __name__ == "__main__":
