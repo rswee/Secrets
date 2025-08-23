@@ -1,0 +1,6 @@
+{
+  "database.user": "DB_USER",
+  "database.password": "DB_PASSWORD",
+  "api.key": "API_KEY",
+  "api.endpoint": "API_ENDPOINT"
+}
