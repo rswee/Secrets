@@ -1,6 +1,14 @@
 {
-  "database.user": "DB_USER",
-  "database.password": "DB_PASSWORD",
-  "api.key": "API_KEY",
-  "api.endpoint": "API_ENDPOINT"
+  "structured": {
+    "config.json": {
+      "api.key": "env:API_TOKEN",
+      "api.endpoint": "default:API_ENDPOINT:https://example.com"
+    }
+  },
+  "tokens": {
+    "app.py": ["API_TOKEN"]
+  },
+  "templates": {
+    "config.json": "config.template.json"
+  }
 }
