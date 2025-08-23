@@ -16,7 +16,7 @@ jobs:
 
       - name: Inject values
         run: |
-          python secrets/inject_secrets.py \
+          python scripts/inject_secrets.py \
             --mapping tools/config/mapping.json \
             --require-all
 
