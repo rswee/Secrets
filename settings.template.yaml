@@ -1,0 +1,4 @@
+service:
+  api:
+    key: ""
+  public_url: ""
