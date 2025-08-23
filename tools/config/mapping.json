@@ -1,0 +1,14 @@
+{
+  "structured": {
+    "config.json": {
+      "api.key": "env:API_TOKEN",
+      "api.endpoint": "default:API_ENDPOINT:https://example.com"
+    }
+  },
+  "tokens": {
+    "app.py": ["API_TOKEN"]
+  },
+  "templates": {
+    "config.json": "config.template.json"
+  }
+}
