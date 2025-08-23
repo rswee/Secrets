@@ -3,12 +3,18 @@
     "config.json": {
       "api.key": "env:API_TOKEN",
       "api.endpoint": "default:API_ENDPOINT:https://example.com"
+    },
+    "settings.yaml": {
+      "service.api.key": "env:API_TOKEN",
+      "service.public_url": "default:PUBLIC_URL:https://site.example"
     }
   },
   "tokens": {
-    "app.py": ["API_TOKEN"]
+    "app.py": ["API_TOKEN"],
+    "README.md": ["PUBLIC_URL"]
   },
   "templates": {
-    "config.json": "config.template.json"
+    "config.json": "config.template.json",
+    "settings.yaml": "settings.template.yaml"
   }
 }
