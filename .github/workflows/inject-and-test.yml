@@ -1,0 +1,38 @@
+name: Inject and run self-test
+on: [workflow_dispatch]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      API_TOKEN:     ${{ secrets.API_TOKEN }}      # required
+      API_ENDPOINT:  ${{ vars.API_ENDPOINT }}      # optional (will default if missing)
+      PUBLIC_URL:    ${{ vars.PUBLIC_URL }}        # optional (will default if missing)
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.11' }
+      - run: pip install --disable-pip-version-check --no-cache-dir -r requirements.txt
+
+      - name: Inject values
+        run: |
+          python tools/config/inject_secrets.py \
+            --mapping tools/config/mapping.json \
+            --require-all
+
+      - name: Show masked config.json (debug)
+        run: |
+          python - <<'PY'
+          import json, pathlib
+          p = pathlib.Path("config.json")
+          print("exists:", p.exists())
+          if p.exists():
+            d = json.loads(p.read_text())
+            d.setdefault("api", {})
+            if "key" in d["api"]:
+              d["api"]["key"] = "***"
+            print(json.dumps(d, indent=2))
+          PY
+
+      - name: Run self-test app
+        run: python app/main.py
