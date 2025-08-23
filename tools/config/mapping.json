@@ -10,7 +10,7 @@
     }
   },
   "tokens": {
-    "app.py": ["API_TOKEN"],
+    "app/app.py": ["API_TOKEN"], 
     "README.md": ["PUBLIC_URL"]
   },
   "templates": {
