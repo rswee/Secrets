@@ -1,0 +1,50 @@
+name: Inject with vendored injector
+on: [workflow_dispatch]
+
+jobs:
+  inject:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read   # read current repo
+    env:
+      # Your app's secrets/vars
+      API_TOKEN:     ${{ secrets.API_TOKEN }}
+      API_ENDPOINT:  ${{ vars.API_ENDPOINT }}
+      PUBLIC_URL:    ${{ vars.PUBLIC_URL }}
+    steps:
+      # 1) Checkout the current (consumer) repo
+      - uses: actions/checkout@v4
+
+      # 2) Checkout the private injector repo into .ci/injector
+      - name: Fetch private injector
+        uses: actions/checkout@v4
+        with:
+          repository:  sweetyrek/config-injector      #your-org/your-injector-repo   # <-- change
+          ref: v0.1.0                               # <-- tag or a commit SHA
+          path: .ci/injector
+          token: ${{ secrets.GH_REPO_READ_PAT }}    # read-only PAT for private repo
+
+      # 3) Python runtime
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      # 4) (Optional) YAML support for structured YAML targets
+      - name: Install YAML dependency
+        run: pip install --disable-pip-version-check --no-cache-dir pyyaml
+
+      # 5) Run the injector against THIS repo using its mapping.json
+      - name: Inject values via vendored injector
+        run: |
+          python .ci/injector/injector/cli.py \
+            --mapping tools/config/mapping.json \
+            --require-all
+
+      # 6) (Optional) Run your verification / app
+      - name: Run self-test (optional)
+        run: |
+          if [ -f app/main.py ]; then
+            python app/main.py
+          else
+            echo "No self-test script found; skipping."
+          fi
